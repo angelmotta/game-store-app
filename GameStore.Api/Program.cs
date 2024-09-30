@@ -44,4 +44,21 @@ app.MapPost("/games", (CreateGameDto newGameRequest) => {
     return Results.CreatedAtRoute(GetGameEndpointName, new {id = newGameObj.Id}, newGameObj);
 });
 
+app.MapPut("/games/{id}", (int id, UpdateGameDto updatedGameRequest) => {
+    var idx = games.FindIndex(gameObj => gameObj.Id == id);
+    if (idx == -1) {
+        return Results.NotFound();
+    }
+
+    games[idx] = new GameDto(
+        id,
+        updatedGameRequest.Name,
+        updatedGameRequest.Genre,
+        updatedGameRequest.Price,
+        updatedGameRequest.ReleaseDate
+    );
+
+    return Results.NoContent(); // HTTP 204 response
+});
+
 app.Run();
