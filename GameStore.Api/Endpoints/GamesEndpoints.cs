@@ -28,18 +28,23 @@ public static class GamesEndpoints
             new DateOnly(2017, 10, 27))
     ];
 
-    // extension method
-    public static WebApplication MapGamesEndpoints(this WebApplication app) {
+    // extension method for WebApplication class
+    public static RouteGroupBuilder MapGamesEndpoints(this WebApplication app) {
         // Define custom behavior for the WebApplication object
-        app.MapGet("/games", () => games);
 
-        app.MapGet("/games/{id}", (int id) => {
+        var routerGroup = app.MapGroup("/games");
+
+        // GET "/games/"
+        routerGroup.MapGet("/", () => games);
+
+        // GET /games/<id>
+        routerGroup.MapGet("/{id}", (int id) => {
             GameDto? result = games.Find(game => game.Id == id);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName(GetGameEndpointName);
 
-        app.MapPost("/games", (CreateGameDto newGameRequest) => {
+        routerGroup.MapPost("/", (CreateGameDto newGameRequest) => {
             GameDto newGameObj = new(
                 games.Count + 1,
                 newGameRequest.Name,
@@ -53,7 +58,7 @@ public static class GamesEndpoints
             return Results.CreatedAtRoute(GetGameEndpointName, new {id = newGameObj.Id}, newGameObj);
         });
 
-        app.MapPut("/games/{id}", (int id, UpdateGameDto updatedGameRequest) => {
+        routerGroup.MapPut("/{id}", (int id, UpdateGameDto updatedGameRequest) => {
             var idx = games.FindIndex(gameObj => gameObj.Id == id);
             if (idx == -1) {
                 return Results.NotFound();
@@ -71,7 +76,7 @@ public static class GamesEndpoints
         });
 
 
-        app.MapDelete("/games/{id}", (int id) => {
+        routerGroup.MapDelete("/{id}", (int id) => {
             int val = games.RemoveAll((gameObj) => gameObj.Id == id);
             if (val == 0) {
                 return Results.NotFound();
@@ -80,6 +85,6 @@ public static class GamesEndpoints
             return Results.NoContent(); // HTTP 204 response
         });
 
-        return app;
+        return routerGroup;
     }
 }
