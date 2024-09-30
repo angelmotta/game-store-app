@@ -61,4 +61,14 @@ app.MapPut("/games/{id}", (int id, UpdateGameDto updatedGameRequest) => {
     return Results.NoContent(); // HTTP 204 response
 });
 
+
+app.MapDelete("/games/{id}", (int id) => {
+    int val = games.RemoveAll((gameObj) => gameObj.Id == id);
+    if (val == 0) {
+        return Results.NotFound();
+    }
+
+    return Results.NoContent(); // HTTP 204 response
+});
+
 app.Run();
