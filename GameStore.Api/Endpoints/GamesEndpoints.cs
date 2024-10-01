@@ -32,7 +32,8 @@ public static class GamesEndpoints
     public static RouteGroupBuilder MapGamesEndpoints(this WebApplication app) {
         // Define custom behavior for the WebApplication object
 
-        var routerGroup = app.MapGroup("/games");
+        var routerGroup = app.MapGroup("/games")
+                            .WithParameterValidation();
 
         // GET "/games/"
         routerGroup.MapGet("/", () => games);
@@ -50,7 +51,7 @@ public static class GamesEndpoints
                 newGameRequest.Name,
                 newGameRequest.Genre,
                 newGameRequest.Price,
-                newGameRequest.ReleaseDate
+                newGameRequest.ReleaseDate ?? DateOnly.FromDateTime(DateTime.Now) // null won't happen for Input Validation in CreateGameDto
             );
 
             games.Add(newGameObj);
