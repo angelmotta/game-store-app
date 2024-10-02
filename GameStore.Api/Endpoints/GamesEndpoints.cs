@@ -3,6 +3,8 @@ using GameStore.Api.Data;
 using GameStore.Api.Dtos;
 using GameStore.Api.Entities;
 using GameStore.Api.Mappers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 namespace GameStore.Api.Endpoints;
 
@@ -39,7 +41,16 @@ public static class GamesEndpoints
                             .WithParameterValidation();
 
         // GET "/games/"
-        routerGroup.MapGet("/", () => games);
+        routerGroup.MapGet("/", (GameStoreContext dbContext) => {
+            var res = dbContext.Games
+                            .Include(game => game.Genre)
+                            .Select(game => game.ToGameSummaryDto())
+                            .AsNoTracking();
+            
+            return Results.Ok(res);
+        }
+            
+        );
 
         // GET /games/<id>
         routerGroup.MapGet("/{id}", (int id, GameStoreContext dbContext) => {
