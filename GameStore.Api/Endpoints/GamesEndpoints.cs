@@ -76,19 +76,17 @@ public static class GamesEndpoints
             return Results.CreatedAtRoute(GetGameEndpointName, new {id = theNewGame.Id}, responseSuccess);
         });
 
-        routerGroup.MapPut("/{id}", (int id, UpdateGameDto updatedGameRequest) => {
-            var idx = games.FindIndex(gameObj => gameObj.Id == id);
-            if (idx == -1) {
+        // PUT /games/<id>
+        routerGroup.MapPut("/{id}", (int id, UpdateGameDto updatedGameRequest, GameStoreContext dbContext) => {
+            Game? existingGame = dbContext.Games.Find(id);
+
+            if (existingGame is null) {
                 return Results.NotFound();
             }
 
-            games[idx] = new GameSummaryDto(
-                id,
-                updatedGameRequest.Name,
-                updatedGameRequest.Genre,
-                updatedGameRequest.Price,
-                updatedGameRequest.ReleaseDate
-            );
+            Game updatedGameEntity = updatedGameRequest.ToEntity(id);
+            dbContext.Entry(existingGame).CurrentValues.SetValues(updatedGameEntity);
+            dbContext.SaveChanges();
 
             return Results.NoContent(); // HTTP 204 response
         });

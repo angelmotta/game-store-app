@@ -15,6 +15,16 @@ public static class GameMapper
         };
     }
 
+    public static Game ToEntity(this UpdateGameDto updatedGameRequest, int id) {
+        return new Game() {
+                Id = id,
+                Name = updatedGameRequest.Name,
+                GenreId = updatedGameRequest.GenreId!.Value,
+                Price = updatedGameRequest.Price,
+                ReleaseDate = updatedGameRequest.ReleaseDate
+        };
+    }
+
     public static GameSummaryDto ToGameSummaryDto(this Game theNewGame) {
         return new GameSummaryDto(
                 theNewGame.Id,
