@@ -1,4 +1,7 @@
+using System.Text.Json;
+using GameStore.Api.Data;
 using GameStore.Api.Dtos;
+using GameStore.Api.Entities;
 
 namespace GameStore.Api.Endpoints;
 
@@ -31,7 +34,6 @@ public static class GamesEndpoints
     // extension method for WebApplication class
     public static RouteGroupBuilder MapGamesEndpoints(this WebApplication app) {
         // Define custom behavior for the WebApplication object
-
         var routerGroup = app.MapGroup("/games")
                             .WithParameterValidation();
 
@@ -45,18 +47,41 @@ public static class GamesEndpoints
         })
         .WithName(GetGameEndpointName);
 
-        routerGroup.MapPost("/", (CreateGameDto newGameRequest) => {
-            GameDto newGameObj = new(
-                games.Count + 1,
-                newGameRequest.Name,
-                newGameRequest.Genre,
-                newGameRequest.Price,
-                newGameRequest.ReleaseDate ?? DateOnly.FromDateTime(DateTime.Now) // null won't happen for Input Validation in CreateGameDto
+        // POST /games/
+        routerGroup.MapPost("/", (CreateGameDto newGameRequest, GameStoreContext dbContext) => {
+            if (newGameRequest.GenreId == null) {
+                // Handle the case where GenreId is null, though this should not happen due to earlier validation
+                throw new InvalidOperationException("GenreId cannot be null");
+            }
+
+            Game theNewGame = new(){
+                Name = newGameRequest.Name,
+                Genre = dbContext.Genre.Find(newGameRequest.GenreId!.Value),
+                GenreId = newGameRequest.GenreId!.Value,
+                Price = newGameRequest.Price,
+                ReleaseDate = newGameRequest.ReleaseDate ?? DateOnly.FromDateTime(DateTime.Now)
+            };
+
+            if (theNewGame.Genre == null) {
+                return Results.BadRequest();
+            }
+
+            // Console.WriteLine("------ new Game resource -----");
+            // Console.WriteLine($"Name: {theNewGame.Name}, Genre: {theNewGame.Genre?.Name}, GenreId: {theNewGame.GenreId}, Price: {theNewGame.Price}, ReleaseDate: {theNewGame.ReleaseDate}");
+            // Console.WriteLine("------- new Game resource ------");
+            dbContext.Games.Add(theNewGame);
+            dbContext.SaveChanges();
+            
+            // Make response to the client
+            GameDto responseSuccess = new(
+                theNewGame.Id,
+                theNewGame.Name,
+                theNewGame.Genre!.Name, // validated before
+                theNewGame.Price,
+                theNewGame.ReleaseDate
             );
 
-            games.Add(newGameObj);
-
-            return Results.CreatedAtRoute(GetGameEndpointName, new {id = newGameObj.Id}, newGameObj);
+            return Results.CreatedAtRoute(GetGameEndpointName, new {id = theNewGame.Id}, responseSuccess);
         });
 
         routerGroup.MapPut("/{id}", (int id, UpdateGameDto updatedGameRequest) => {
