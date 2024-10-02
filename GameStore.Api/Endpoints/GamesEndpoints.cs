@@ -2,6 +2,7 @@ using System.Text.Json;
 using GameStore.Api.Data;
 using GameStore.Api.Dtos;
 using GameStore.Api.Entities;
+using GameStore.Api.Mappers;
 
 namespace GameStore.Api.Endpoints;
 
@@ -52,19 +53,14 @@ public static class GamesEndpoints
             if (newGameRequest.GenreId == null) {
                 // Handle the case where GenreId is null, though this should not happen due to earlier validation
                 throw new InvalidOperationException("GenreId cannot be null");
-            }
+            }   
 
-            Game theNewGame = new(){
-                Name = newGameRequest.Name,
-                Genre = dbContext.Genre.Find(newGameRequest.GenreId!.Value),
-                GenreId = newGameRequest.GenreId!.Value,
-                Price = newGameRequest.Price,
-                ReleaseDate = newGameRequest.ReleaseDate ?? DateOnly.FromDateTime(DateTime.Now)
-            };
-
-            if (theNewGame.Genre == null) {
+            Genre? theGenre = dbContext.Genre.Find(newGameRequest.GenreId!.Value);
+            if (theGenre == null) {
                 return Results.BadRequest();
             }
+            Game theNewGame = newGameRequest.ToEntity();
+            theNewGame.Genre = theGenre;
 
             // Console.WriteLine("------ new Game resource -----");
             // Console.WriteLine($"Name: {theNewGame.Name}, Genre: {theNewGame.Genre?.Name}, GenreId: {theNewGame.GenreId}, Price: {theNewGame.Price}, ReleaseDate: {theNewGame.ReleaseDate}");
@@ -73,14 +69,8 @@ public static class GamesEndpoints
             dbContext.SaveChanges();
             
             // Make response to the client
-            GameDto responseSuccess = new(
-                theNewGame.Id,
-                theNewGame.Name,
-                theNewGame.Genre!.Name, // validated before
-                theNewGame.Price,
-                theNewGame.ReleaseDate
-            );
-
+            GameDto responseSuccess = theNewGame.ToDTO();
+            
             return Results.CreatedAtRoute(GetGameEndpointName, new {id = theNewGame.Id}, responseSuccess);
         });
 
