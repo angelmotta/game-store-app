@@ -13,27 +13,6 @@ public static class GamesEndpoints
 
     const string GetGameEndpointName = "GetGame";
 
-    private static List<GameSummaryDto> games = [
-        new (
-            1, 
-            "Street Fighter V",
-            "Fighting",
-            19.99M,
-            new DateOnly(2016, 2, 16)),
-        new (
-            2, 
-            "The Witcher 3: Wild Hunt",
-            "RPG",
-            29.99M,
-            new DateOnly(2015, 5, 19)),
-        new (
-            3, 
-            "Super Mario Odyssey",
-            "Platform",
-            39.99M,
-            new DateOnly(2017, 10, 27))
-    ];
-
     // extension method for WebApplication class
     public static RouteGroupBuilder MapGamesEndpoints(this WebApplication app) {
         // Define custom behavior for the WebApplication object
@@ -103,9 +82,12 @@ public static class GamesEndpoints
         });
 
 
-        routerGroup.MapDelete("/{id}", (int id) => {
-            int val = games.RemoveAll((gameObj) => gameObj.Id == id);
-            if (val == 0) {
+        routerGroup.MapDelete("/{id}", (int id, GameStoreContext dbContext) => {
+            var numsRowsDeleted = dbContext.Games
+                        .Where(game => game.Id == id)
+                        .ExecuteDelete();
+
+            if (numsRowsDeleted == 0) {
                 return Results.NotFound();
             }
 
