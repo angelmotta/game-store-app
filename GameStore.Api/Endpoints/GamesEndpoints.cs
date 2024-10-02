@@ -11,7 +11,7 @@ public static class GamesEndpoints
 
     const string GetGameEndpointName = "GetGame";
 
-    private static List<GameDto> games = [
+    private static List<GameSummaryDto> games = [
         new (
             1, 
             "Street Fighter V",
@@ -42,9 +42,11 @@ public static class GamesEndpoints
         routerGroup.MapGet("/", () => games);
 
         // GET /games/<id>
-        routerGroup.MapGet("/{id}", (int id) => {
-            GameDto? result = games.Find(game => game.Id == id);
-            return result is null ? Results.NotFound() : Results.Ok(result);
+        routerGroup.MapGet("/{id}", (int id, GameStoreContext dbContext) => {
+            // GameDto? result = games.Find(game => game.Id == id);
+            Game? gameResult = dbContext.Games.Find(id);
+
+            return gameResult is null ? Results.NotFound() : Results.Ok(gameResult.ToGameDetailsDto());
         })
         .WithName(GetGameEndpointName);
 
@@ -69,8 +71,8 @@ public static class GamesEndpoints
             dbContext.SaveChanges();
             
             // Make response to the client
-            GameDto responseSuccess = theNewGame.ToDTO();
-            
+            GameDetailsDto responseSuccess = theNewGame.ToGameDetailsDto();
+
             return Results.CreatedAtRoute(GetGameEndpointName, new {id = theNewGame.Id}, responseSuccess);
         });
 
@@ -80,7 +82,7 @@ public static class GamesEndpoints
                 return Results.NotFound();
             }
 
-            games[idx] = new GameDto(
+            games[idx] = new GameSummaryDto(
                 id,
                 updatedGameRequest.Name,
                 updatedGameRequest.Genre,

@@ -15,11 +15,21 @@ public static class GameMapper
         };
     }
 
-    public static GameDto ToDTO(this Game theNewGame) {
-        return new GameDto(
+    public static GameSummaryDto ToGameSummaryDto(this Game theNewGame) {
+        return new GameSummaryDto(
                 theNewGame.Id,
                 theNewGame.Name,
                 theNewGame.Genre!.Name, // validated before
+                theNewGame.Price,
+                theNewGame.ReleaseDate
+        );
+    }
+
+    public static GameDetailsDto ToGameDetailsDto(this Game theNewGame) {
+        return new GameDetailsDto(
+                theNewGame.Id,
+                theNewGame.Name,
+                theNewGame.GenreId,
                 theNewGame.Price,
                 theNewGame.ReleaseDate
         );
